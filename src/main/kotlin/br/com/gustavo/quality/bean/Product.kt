@@ -1,6 +1,7 @@
 package br.com.gustavo.quality.bean
 
 import jakarta.persistence.*
+import kotlin.jvm.Transient
 
 @Entity
 @Table(name = "produto", schema = "public")
@@ -19,4 +20,7 @@ class Product {
 
     @Column
     var price: Double? = null
+
+    @Transient
+    var categoryIds: List<Int>? = null
 }

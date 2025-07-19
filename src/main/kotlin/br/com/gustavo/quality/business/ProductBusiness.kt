@@ -1,9 +1,17 @@
 package br.com.gustavo.quality.business
 
 import br.com.gustavo.quality.bean.Product
+import br.com.gustavo.quality.bean.ProductCategory
+import br.com.gustavo.quality.dtos.CategoryDTO
+import br.com.gustavo.quality.dtos.ProductDTO
+import br.com.gustavo.quality.repositories.CategoryRepository
+import br.com.gustavo.quality.repositories.ProductCategoryRepository
 import br.com.gustavo.quality.repositories.ProductRepository
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.Pageable
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -11,6 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
@@ -20,10 +29,38 @@ class ProductBusiness {
     @Autowired
     lateinit var productRepository: ProductRepository
 
+    @Autowired
+    lateinit var categoryRepository: CategoryRepository
+
+    @Autowired
+    lateinit var productCategoryRepository: ProductCategoryRepository
+
     @GetMapping
-    fun getAllProducts(): List<Product> {
-        return productRepository.findAll()
-    }
+    fun getAllProducts(
+        @RequestParam(required = false) name: String?,
+        pageable: Pageable): Page<ProductDTO> {
+        val productPage: Page<Product> = if (!name.isNullOrBlank()) {
+            productRepository.findByNameContainingIgnoreCase(name, pageable)
+        } else {
+            productRepository.findAll(pageable)
+        }
+
+        val productDtos: List<ProductDTO> = productPage.content.map { product ->
+            val categories = categoryRepository.findCategoriesByProductId(product.id)
+            val categoryDtos = categories.map { category ->
+                CategoryDTO(id = category.id, name = category.name ?:"")
+            }
+
+            ProductDTO(
+                id = product.id,
+                name = product.name ?: "",
+                description = product.description ?: "",
+                price = product.price ?: 0.0,
+                categories = categoryDtos
+            )
+        }
+        return PageImpl(productDtos, pageable, productPage.totalElements)
+ }
 
     @GetMapping("/{id}")
     fun getProduct(@PathVariable("id") id: Int): Product {
@@ -32,7 +69,17 @@ class ProductBusiness {
 
     @PostMapping
     fun postProduct(@RequestBody product: Product): Product {
-        return productRepository.save(product)
+        var saveProduct = productRepository.save(product)
+
+        product.categoryIds?.forEach { categoryId ->
+            var productCategory = ProductCategory().apply {
+                this.productId = saveProduct.id
+                this.categoryId = categoryId
+            }
+            productCategoryRepository.save(productCategory)
+        }
+
+        return saveProduct
     }
 
     @PutMapping("/{id}")
