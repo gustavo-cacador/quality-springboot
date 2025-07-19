@@ -1,10 +1,9 @@
-package br.com.gustavo.quality
+package br.com.gustavo.quality.business
 
 import br.com.gustavo.quality.bean.Product
 import br.com.gustavo.quality.repositories.ProductRepository
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -16,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("products")
-class business {
+class ProductBusiness {
 
     @Autowired
     lateinit var productRepository: ProductRepository
@@ -28,7 +27,7 @@ class business {
 
     @GetMapping("/{id}")
     fun getProduct(@PathVariable("id") id: Int): Product {
-        return productRepository.findById(id).orElseThrow{EntityNotFoundException()}
+        return productRepository.findById(id).orElseThrow{EntityNotFoundException("Produto com id: $id não encontrado")}
     }
 
     @PostMapping
