@@ -3,6 +3,7 @@ package br.com.gustavo.quality.business
 import br.com.gustavo.quality.bean.Category
 import br.com.gustavo.quality.repositories.CategoryRepository
 import jakarta.persistence.EntityNotFoundException
+import jakarta.validation.Valid
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.*
 
@@ -24,12 +25,12 @@ class CategoryBusiness {
     }
 
     @PostMapping
-    fun postCategory(@RequestBody category: Category): Category {
+    fun postCategory(@RequestBody @Valid category: Category): Category {
         return categoryRepository.save(category)
     }
 
     @PutMapping("/{id}")
-    fun updateCategory(@PathVariable("id") id: Int, @RequestBody category: Category): Category {
+    fun updateCategory(@PathVariable("id") id: Int, @RequestBody @Valid category: Category): Category {
         var categoryUpdate = categoryRepository.findById(id).orElseThrow{EntityNotFoundException("Categoria com id: $id não encontrado")}
 
         categoryUpdate.name = category.name

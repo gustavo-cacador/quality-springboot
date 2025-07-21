@@ -8,6 +8,7 @@ import br.com.gustavo.quality.repositories.CategoryRepository
 import br.com.gustavo.quality.repositories.ProductCategoryRepository
 import br.com.gustavo.quality.repositories.ProductRepository
 import jakarta.persistence.EntityNotFoundException
+import jakarta.validation.Valid
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
@@ -67,23 +68,29 @@ class ProductBusiness {
         return productRepository.findById(id).orElseThrow{EntityNotFoundException("Produto com id: $id não encontrado")}
     }
 
-    @PostMapping
-    fun postProduct(@RequestBody product: Product): Product {
-        var saveProduct = productRepository.save(product)
 
-        product.categoryIds?.forEach { categoryId ->
-            var productCategory = ProductCategory().apply {
+    @PostMapping
+    fun postProduct(@RequestBody @Valid productDTO: ProductDTO): ProductDTO {
+        val product = Product()
+        product.name = productDTO.name
+        product.description = productDTO.description
+        product.price = productDTO.price
+
+        val saveProduct = productRepository.save(product)
+
+        productDTO.categories.forEach { categoryDTO ->
+            val productCategory = ProductCategory().apply {
                 this.productId = saveProduct.id
-                this.categoryId = categoryId
+                this.categoryId = categoryDTO.id!!
             }
             productCategoryRepository.save(productCategory)
-        }
-
-        return saveProduct
+    }
+        return productDTO.copy(id = saveProduct.id)
     }
 
+
     @PutMapping("/{id}")
-    fun updateProduct(@PathVariable("id") id: Int, @RequestBody product: Product): Product {
+    fun updateProduct(@PathVariable("id") id: Int, @RequestBody @Valid product: Product): Product {
         var productUpdate = productRepository.findById(id).orElseThrow{EntityNotFoundException("Produto com id: $id não encontrado")}
 
         productUpdate.name = product.name

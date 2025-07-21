@@ -22,5 +22,5 @@ class Product {
     var price: Double? = null
 
     @Transient
-    var categoryIds: List<Int>? = null
+    var categories: List<Int>? = null
 }
